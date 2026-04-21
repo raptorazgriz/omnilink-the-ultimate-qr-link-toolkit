@@ -13,7 +13,7 @@ const applicationTables = {
   })
   .index("by_userId_createdAt", ["userId", "createdAt"])
   .index("by_shortCode", ["shortCode"]),
-  // Store click events for detailed analytics later
+  // Store click events for detailed analytics
   clicks: defineTable({
     linkId: v.id("links"),
     timestamp: v.number(),
@@ -34,6 +34,18 @@ const applicationTables = {
     createdAt: v.number(),
   })
   .index("by_userId", ["userId"]),
+  // File metadata for the file storage system (Required for files.ts)
+  files: defineTable({
+    userId: v.id("users"),
+    storageId: v.id("_storage"),
+    filename: v.string(),
+    mimeType: v.string(),
+    size: v.number(),
+    description: v.optional(v.string()),
+    uploadedAt: v.number(),
+  })
+  .index("by_userId_uploadedAt", ["userId", "uploadedAt"])
+  .index("by_userId_storageId", ["userId", "storageId"]),
 };
 export default defineSchema({
   ...authTables,

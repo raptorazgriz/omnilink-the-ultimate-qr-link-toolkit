@@ -10,47 +10,53 @@ import { useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Authenticated, Unauthenticated } from 'convex/react';
 import { SignInForm } from '@/components/SignInForm';
+import { formatDistanceToNow } from 'date-fns';
 const quickActions = [
   {
     title: "QR Generator",
-    description: "Create premium, customizable QR codes for any data.",
+    description: "Create premium, customizable QR codes with cloud storage.",
     icon: QrCode,
     path: "/generate",
-    color: "bg-blue-500",
     gradient: "from-blue-500 to-indigo-600"
   },
   {
     title: "QR Scanner",
-    description: "Lightning-fast scanning from camera or file uploads.",
+    description: "Hardware-accelerated scanning from any modern device.",
     icon: Scan,
     path: "/scan",
-    color: "bg-purple-500",
     gradient: "from-purple-500 to-pink-600"
   },
   {
     title: "Link Shortener",
-    description: "Shorten URLs and track click analytics in real-time.",
+    description: "Instant redirection with real-time click tracking.",
     icon: Link2,
     path: "/links",
-    color: "bg-orange-500",
     gradient: "from-orange-500 to-red-600"
   }
 ];
 export function HomePage() {
   const user = useQuery(api.auth.loggedInUser);
+  const links = useQuery(api.links.list) ?? [];
+  const qrCodes = useQuery(api.qr.list) ?? [];
+  const totalClicks = links.reduce((acc, curr) => acc + curr.clicks, 0);
+  // Merge and sort for activity feed
+  const activity = [
+    ...links.map(l => ({ id: l._id, type: 'Link', name: l.title, date: l.createdAt, data: `/${l.shortCode}`, hits: l.clicks })),
+    ...qrCodes.map(q => ({ id: q._id, type: 'QR', name: q.name, date: q.createdAt, data: q.data, hits: null }))
+  ].sort((a, b) => b.date - a.date).slice(0, 5);
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="py-8 md:py-10 lg:py-12 space-y-10">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b pb-8">
           <div className="space-y-2">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-              Welcome to <span className="text-indigo-500">OmniLink</span>
+              Welcome, <span className="text-indigo-500">{user?.name || 'Explorer'}</span>
             </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl">
-              The professional-grade toolkit for generating QR codes, scanning instantly, and managing shortened links with deep analytics.
+            <p className="text-muted-foreground text-lg max-w-2xl text-pretty">
+              Your mission-critical dashboard for digital connectivity and link intelligence.
             </p>
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
             <ThemeToggle className="static" />
             <Authenticated>
               <SignOutButton />
@@ -75,83 +81,126 @@ export function HomePage() {
                   { icon: TrendingUp, text: "Real-time engagement tracking" }
                 ].map((feature, i) => (
                   <div key={i} className="flex items-center gap-3 text-muted-foreground">
-                    <div className="h-6 w-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
-                      <feature.icon className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <div className="h-7 w-7 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                      <feature.icon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                     </div>
-                    <span>{feature.text}</span>
+                    <span className="font-medium">{feature.text}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="bg-card border rounded-3xl p-8 shadow-2xl shadow-indigo-500/10">
-              <CardTitle className="text-2xl mb-6">Get Started</CardTitle>
+            <div className="bg-card border-2 rounded-3xl p-8 shadow-2xl shadow-indigo-500/5 relative overflow-hidden">
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/5 blur-3xl rounded-full" />
+              <CardTitle className="text-2xl mb-6 relative">Access the Toolkit</CardTitle>
               <SignInForm />
             </div>
           </div>
         </Unauthenticated>
         <Authenticated>
-          <div className="space-y-8">
+          <div className="space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {quickActions.map((action) => (
                 <Link key={action.path} to={action.path} className="group">
-                  <Card className="h-full border-2 hover:border-indigo-500 transition-all duration-300 overflow-hidden relative glass">
+                  <Card className="h-full border-2 hover:border-indigo-500 transition-all duration-300 overflow-hidden relative glass shadow-sm hover:shadow-indigo-500/10">
                     <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${action.gradient} opacity-5 group-hover:opacity-10 transition-opacity blur-3xl`} />
                     <CardHeader className="relative">
-                      <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${action.gradient} flex items-center justify-center text-white mb-2 shadow-lg group-hover:scale-110 transition-transform`}>
-                        <action.icon className="h-6 w-6" />
+                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${action.gradient} flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
+                        <action.icon className="h-7 w-7" />
                       </div>
                       <CardTitle className="group-hover:text-indigo-500 transition-colors">{action.title}</CardTitle>
-                      <CardDescription>{action.description}</CardDescription>
+                      <CardDescription className="text-pretty">{action.description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex items-center text-indigo-500 font-medium text-sm">
-                      Try now <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    <CardContent className="flex items-center text-indigo-500 font-bold text-sm">
+                      Open Tool <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </CardContent>
                   </Card>
                 </Link>
               ))}
             </div>
-            <Card className="overflow-hidden border-2">
-              <CardHeader className="bg-muted/30 border-b">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Recent Activity</CardTitle>
-                    <CardDescription>Your latest generated links and scanned codes</CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/links">View All</Link>
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y">
-                  {[
-                    { type: 'Link', name: 'Product Launch 2024', date: '2 hours ago', status: 'Active', data: 'omni.link/l/prod-24' },
-                    { type: 'QR', name: 'Coffee Shop WiFi', date: '5 hours ago', status: 'Generated', data: 'WIFI:T:WPA;S:BeanScene...' },
-                    { type: 'Link', name: 'Portfolio Portfolio', date: 'Yesterday', status: 'Active', data: 'omni.link/l/myportfolio' },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 hover:bg-muted/20 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${item.type === 'Link' ? 'bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400'}`}>
-                          {item.type === 'Link' ? <Link2 className="h-5 w-5" /> : <QrCode className="h-5 w-5" />}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-6">
+                <Card className="overflow-hidden border-2 shadow-sm">
+                  <CardHeader className="bg-muted/30 border-b flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">Recent Operations</CardTitle>
+                      <CardDescription>Live history of your digital assets</CardDescription>
+                    </div>
+                    <Button variant="ghost" size="sm" className="font-bold text-indigo-500" asChild>
+                      <Link to="/links">View All History</Link>
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="divide-y">
+                      {activity.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between p-5 hover:bg-muted/10 transition-colors group">
+                          <div className="flex items-center gap-4">
+                            <div className={`h-11 w-11 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${item.type === 'Link' ? 'bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400'}`}>
+                              {item.type === 'Link' ? <Link2 className="h-5 w-5" /> : <QrCode className="h-5 w-5" />}
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm">{item.name}</p>
+                              <p className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">{item.data}</p>
+                            </div>
+                          </div>
+                          <div className="text-right flex flex-col gap-1">
+                            <p className="text-xs font-black uppercase tracking-tighter text-indigo-500">
+                              {item.hits !== null ? `${item.hits} Hits` : 'Stored'}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
+                              {formatDistanceToNow(item.date)} ago
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">{item.data}</p>
+                      ))}
+                      {activity.length === 0 && (
+                        <div className="p-12 text-center text-muted-foreground">
+                          <Zap className="h-10 w-10 mx-auto mb-4 opacity-20" />
+                          <p>Your activity feed is empty. Start by creating a link or QR code.</p>
                         </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="space-y-6">
+                <Card className="border-2 bg-gradient-to-br from-indigo-600 to-purple-700 text-white shadow-xl">
+                  <CardHeader>
+                    <CardTitle className="text-sm uppercase tracking-[0.2em] font-black opacity-80">Global Pulse</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6 pb-8">
+                    <div className="space-y-1">
+                      <div className="text-5xl font-black tracking-tighter">{totalClicks.toLocaleString()}</div>
+                      <div className="text-xs font-bold uppercase opacity-60">Total Engagement Actions</div>
+                    </div>
+                    <div className="h-px bg-white/10 w-full" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-0.5">
+                        <div className="text-2xl font-bold">{links.length}</div>
+                        <div className="text-[10px] uppercase font-bold opacity-60">Active Links</div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{item.status}</p>
-                        <p className="text-xs text-muted-foreground">{item.date}</p>
+                      <div className="space-y-0.5">
+                        <div className="text-2xl font-bold">{qrCodes.length}</div>
+                        <div className="text-[10px] uppercase font-bold opacity-60">Design Vault</div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+                <Card className="border-2 border-dashed bg-muted/20">
+                  <CardContent className="p-6 text-center space-y-4">
+                    <div className="h-12 w-12 rounded-full bg-indigo-500/10 flex items-center justify-center mx-auto">
+                      <Shield className="h-6 w-6 text-indigo-500" />
+                    </div>
+                    <p className="text-xs font-medium leading-relaxed text-muted-foreground">
+                      All data is encrypted in transit and at rest using Convex's secure cloud infrastructure.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
         </Authenticated>
-        <footer className="pt-12 text-center text-muted-foreground border-t">
-          <p className="text-sm">© 2024 OmniLink Professional. Securely processed by Convex.</p>
+        <footer className="pt-12 text-center text-muted-foreground border-t border-muted/50">
+          <p className="text-xs font-bold uppercase tracking-widest opacity-40">OmniLink Professional Infrastructure • v2.0.0</p>
         </footer>
       </div>
     </div>

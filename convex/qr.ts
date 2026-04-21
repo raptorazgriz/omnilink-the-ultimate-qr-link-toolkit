@@ -23,16 +23,6 @@ export const save = mutation({
     });
   },
 });
-export const remove = mutation({
-  args: { qrId: v.id("qrCodes") },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
-    const existing = await ctx.db.get(args.qrId);
-    if (!existing || existing.userId !== userId) throw new Error("Unauthorized or not found");
-    await ctx.db.delete(args.qrId);
-  },
-});
 export const list = query({
   args: {},
   handler: async (ctx) => {
