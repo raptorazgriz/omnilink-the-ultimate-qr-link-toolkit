@@ -20,6 +20,7 @@ import { ScanPage } from '@/pages/ScanPage'
 import { LinksPage } from '@/pages/LinksPage'
 import { RedirectPage } from '@/pages/RedirectPage'
 import { AboutPage } from '@/pages/AboutPage'
+import { VaultPage } from '@/pages/VaultPage'
 const queryClient = new QueryClient();
 const router = createBrowserRouter([
   {
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
     children: [
       { path: "/", element: <HomePage /> },
       { path: "/generate", element: <GeneratePage /> },
+      { path: "/vault", element: <VaultPage /> },
       { path: "/scan", element: <ScanPage /> },
       { path: "/links", element: <LinksPage /> },
       { path: "/about", element: <AboutPage /> },

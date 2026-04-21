@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { QrCode, Scan, Link2, TrendingUp, ArrowRight, Zap, Shield, Sparkles } from 'lucide-react';
+import { QrCode, Scan, Link2, TrendingUp, ArrowRight, Zap, Shield, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -11,6 +11,7 @@ import { api } from '@convex/_generated/api';
 import { Authenticated, Unauthenticated } from 'convex/react';
 import { SignInForm } from '@/components/SignInForm';
 import { formatDistanceToNow } from 'date-fns';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 const quickActions = [
   {
     title: "QR Generator",
@@ -27,19 +28,19 @@ const quickActions = [
     gradient: "from-purple-500 to-pink-600"
   },
   {
-    title: "Link Shortener",
-    description: "Instant redirection with real-time click tracking.",
-    icon: Link2,
-    path: "/links",
-    gradient: "from-orange-500 to-red-600"
+    title: "Design Vault",
+    description: "Your secure repository for high-res QR branding assets.",
+    icon: Shield,
+    path: "/vault",
+    gradient: "from-emerald-500 to-teal-600"
   }
 ];
 export function HomePage() {
   const user = useQuery(api.auth.loggedInUser);
   const links = useQuery(api.links.list) ?? [];
   const qrCodes = useQuery(api.qr.list) ?? [];
+  const analytics = useQuery(api.links.getAnalytics) ?? [];
   const totalClicks = links.reduce((acc, curr) => acc + curr.clicks, 0);
-  // Merge and sort for activity feed
   const activity = [
     ...links.map(l => ({ id: l._id, type: 'Link', name: l.title, date: l.createdAt, data: `/${l.shortCode}`, hits: l.clicks })),
     ...qrCodes.map(q => ({ id: q._id, type: 'QR', name: q.name, date: q.createdAt, data: q.data, hits: null }))
@@ -53,7 +54,7 @@ export function HomePage() {
               Welcome, <span className="text-indigo-500">{user?.name || 'Explorer'}</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl text-pretty">
-              Your mission-critical dashboard for digital connectivity and link intelligence.
+              Comprehensive analytics and asset management at your fingertips.
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
@@ -68,17 +69,17 @@ export function HomePage() {
             <div className="space-y-6">
               <Badge variant="secondary" className="px-3 py-1 text-sm font-medium border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
                 <Sparkles className="h-3.5 w-3.5 mr-2" />
-                Empowering your digital presence
+                The Future of Connectivity
               </Badge>
               <h2 className="text-3xl md:text-5xl font-bold leading-tight">
-                One platform. <br />
-                <span className="text-indigo-500">Infinite connections.</span>
+                Connect your brand <br />
+                <span className="text-indigo-500">to the world instantly.</span>
               </h2>
               <div className="space-y-4">
                 {[
-                  { icon: Zap, text: "Instant link shortening & redirection" },
-                  { icon: Shield, text: "Secure, highly-compatible QR encoding" },
-                  { icon: TrendingUp, text: "Real-time engagement tracking" }
+                  { icon: Zap, text: "Fastest redirection in the cloud" },
+                  { icon: Shield, text: "Highly customizable brand QR assets" },
+                  { icon: TrendingUp, text: "Deep engagement analytics included" }
                 ].map((feature, i) => (
                   <div key={i} className="flex items-center gap-3 text-muted-foreground">
                     <div className="h-7 w-7 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
@@ -90,8 +91,7 @@ export function HomePage() {
               </div>
             </div>
             <div className="bg-card border-2 rounded-3xl p-8 shadow-2xl shadow-indigo-500/5 relative overflow-hidden">
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/5 blur-3xl rounded-full" />
-              <CardTitle className="text-2xl mb-6 relative">Access the Toolkit</CardTitle>
+              <CardTitle className="text-2xl mb-6 relative">Sign in to Get Started</CardTitle>
               <SignInForm />
             </div>
           </div>
@@ -118,16 +118,46 @@ export function HomePage() {
               ))}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-8">
+                <Card className="border-2 overflow-hidden shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Engagement Trends</CardTitle>
+                    <CardDescription>Click activity across the last 7 days</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[300px] w-full pr-4">
+                    {analytics.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={analytics}>
+                          <defs>
+                            <linearGradient id="colorClicks" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                          <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                          <YAxis fontSize={12} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }}
+                            itemStyle={{ color: '#6366f1', fontWeight: 'bold' }}
+                          />
+                          <Area type="monotone" dataKey="clicks" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorClicks)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+                        <TrendingUp className="h-10 w-10 mb-2 opacity-20" />
+                        <p>Accumulating engagement data...</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
                 <Card className="overflow-hidden border-2 shadow-sm">
                   <CardHeader className="bg-muted/30 border-b flex flex-row items-center justify-between">
                     <div>
                       <CardTitle className="text-lg">Recent Operations</CardTitle>
                       <CardDescription>Live history of your digital assets</CardDescription>
                     </div>
-                    <Button variant="ghost" size="sm" className="font-bold text-indigo-500" asChild>
-                      <Link to="/links">View All History</Link>
-                    </Button>
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="divide-y">
@@ -165,22 +195,22 @@ export function HomePage() {
               <div className="space-y-6">
                 <Card className="border-2 bg-gradient-to-br from-indigo-600 to-purple-700 text-white shadow-xl">
                   <CardHeader>
-                    <CardTitle className="text-sm uppercase tracking-[0.2em] font-black opacity-80">Global Pulse</CardTitle>
+                    <CardTitle className="text-sm uppercase tracking-[0.2em] font-black opacity-80">Global Reach</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6 pb-8">
                     <div className="space-y-1">
                       <div className="text-5xl font-black tracking-tighter">{totalClicks.toLocaleString()}</div>
-                      <div className="text-xs font-bold uppercase opacity-60">Total Engagement Actions</div>
+                      <div className="text-xs font-bold uppercase opacity-60">Cumulative Engagements</div>
                     </div>
                     <div className="h-px bg-white/10 w-full" />
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-0.5">
                         <div className="text-2xl font-bold">{links.length}</div>
-                        <div className="text-[10px] uppercase font-bold opacity-60">Active Links</div>
+                        <div className="text-[10px] uppercase font-bold opacity-60">Cloud Links</div>
                       </div>
                       <div className="space-y-0.5">
                         <div className="text-2xl font-bold">{qrCodes.length}</div>
-                        <div className="text-[10px] uppercase font-bold opacity-60">Design Vault</div>
+                        <div className="text-[10px] uppercase font-bold opacity-60">QR Designs</div>
                       </div>
                     </div>
                   </CardContent>
@@ -191,7 +221,7 @@ export function HomePage() {
                       <Shield className="h-6 w-6 text-indigo-500" />
                     </div>
                     <p className="text-xs font-medium leading-relaxed text-muted-foreground">
-                      All data is encrypted in transit and at rest using Convex's secure cloud infrastructure.
+                      OmniLink infrastructure ensures 99.9% uptime for your critical redirection paths.
                     </p>
                   </CardContent>
                 </Card>
@@ -200,7 +230,7 @@ export function HomePage() {
           </div>
         </Authenticated>
         <footer className="pt-12 text-center text-muted-foreground border-t border-muted/50">
-          <p className="text-xs font-bold uppercase tracking-widest opacity-40">OmniLink Professional Infrastructure • v2.0.0</p>
+          <p className="text-xs font-bold uppercase tracking-widest opacity-40">OmniLink Pro • Release 2.5.0</p>
         </footer>
       </div>
     </div>
