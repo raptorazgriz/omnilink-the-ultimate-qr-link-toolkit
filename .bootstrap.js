@@ -78,7 +78,7 @@ function updateWranglerJsonc() {
 
 function runSetupCommands() {
     const commands = [
-    "bun install qrcode.react"
+    "bun install qrcode.react nanoid"
 ];
     
     if (commands.length === 0) {
